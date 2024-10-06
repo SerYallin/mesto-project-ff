@@ -11,7 +11,7 @@ const cardsholder = document.querySelector('.places');
 const cardsList = cardsholder.querySelector('.places__list');
 
 // Функция создания карточки
-const getCardHtml = data => {
+const getCardHtml = (data, removeCardCallback) => {
   if (!templateSource || typeof data !== 'object') {
     return;
   }
@@ -36,7 +36,7 @@ const getCardHtml = data => {
   // Колбэк на удаление по клику.
   if (deletButton) {
     deletButton.addEventListener('click', e => {
-      removeCard(e.target.closest('.card'));
+      removeCardCallback(e.target.closest('.card'));
     });
   }
 
@@ -53,5 +53,5 @@ const removeCard = node => {
 
 // Вывести карточки на страницу
 initialCards.forEach(item => {
-  cardsList.append(getCardHtml(item));
+  cardsList.append(getCardHtml(item, removeCard));
 });
