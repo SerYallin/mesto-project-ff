@@ -12,7 +12,8 @@ jobs:
       - run: npm --version
       - uses: actions/checkout@v4
       - run: npm install
-      - run: npm run build
+      - name: Run building
+        run: npm run build
         with:
           path: ./dist
   deploy:
