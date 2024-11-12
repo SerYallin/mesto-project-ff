@@ -15,7 +15,7 @@ const template = {
 }
 
 // Функция создания карточки
-export const getCardHtml = (data, removeCardCallback, likeCardCallback) => {
+export const getCardHtml = (data, removeCardCallback, likeCardCallback, imageClickEvent) => {
   if (!template.source || typeof data !== 'object') {
     return;
   }
@@ -32,6 +32,12 @@ export const getCardHtml = (data, removeCardCallback, likeCardCallback) => {
   if (image) {
     image.alt = data.name;
     image.src = data.link;
+
+    //Колбэк на картинке
+    if (imageClickEvent) {
+      console.log(imageClickEvent);
+      image.addEventListener('click', imageClickEvent);
+    }
   }
 
   if (title) {
@@ -40,15 +46,15 @@ export const getCardHtml = (data, removeCardCallback, likeCardCallback) => {
 
   // Колбэк на удаление по клику.
   if (deleteButton && removeCardCallback) {
-    deleteButton.addEventListener('click', e => {
-      removeCardCallback(e.target);
+    deleteButton.addEventListener('click', event => {
+      removeCardCallback(event.target);
     });
   }
 
   // Колбэк на лайк
   if (likeButton && likeCardCallback) {
-    likeButton.addEventListener('click', e => {
-      likeCardCallback(e.target);
+    likeButton.addEventListener('click', event => {
+      likeCardCallback(event.target);
     });
   }
 
@@ -57,9 +63,6 @@ export const getCardHtml = (data, removeCardCallback, likeCardCallback) => {
 
 // Функция удаления карточки
 export const removeCard = (card) => {
-  if (!card) {
-    return;
-  }
   if (!card.classList.contains(template.classes.card)) {
     card = card.closest('.' + template.classes.card);
   }
@@ -70,8 +73,5 @@ export const removeCard = (card) => {
 
 // Функция нажатия кнопки лайк.
 export const likeCardCallback = (button) => {
-  if (!button) {
-    return;
-  }
   button.classList.toggle(template.classes.likeActive);
 }

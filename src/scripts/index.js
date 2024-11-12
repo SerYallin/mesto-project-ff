@@ -1,7 +1,11 @@
 import '../styles/pages/index.css'
 import initialCards from './cards'
 import { getCardHtml, likeCardCallback, removeCard } from './components/card';
-import { openModal, closeModal, isModalOpen, isModalAreaClick } from './components/modal';
+import {
+  openModal,
+  closeModal,
+  overlayClickModalEvent,
+} from './components/modal';
 
 // DOM узлы
 const cardsholder = document.querySelector('.places');
@@ -14,36 +18,26 @@ const editProfileModal = document.querySelector('.popup_type_edit');
 const editProfileForm = editProfileModal.querySelector('.popup__form');
 const profileName = document.querySelector('.profile__title');
 const profileDescription = document.querySelector('.profile__description');
-const viewImagePopup = document.querySelector('.popup_type_image');
+const viewImageModal = document.querySelector('.popup_type_image');
 const modals = document.querySelectorAll('.popup');
 
-let activeModal = null;
+// Отображение модульного окна изображения.
+const imageClickEvent = (event) => {
+  const image = event.target;
+  if (image.classList.contains('card__image')) {
+    openModal(viewImageModal);
+    const popupImage = viewImageModal.querySelector('.popup__image');
+    const popupCaption = viewImageModal.querySelector('.popup__caption');
+    popupImage.src = image.src;
+    popupImage.alt = image.alt;
+    popupCaption.textContent = image.alt;
+  }
+}
 
 // Вывести карточки на страницу
 initialCards.forEach(item => {
-  cardsList.append(getCardHtml(item, removeCard, likeCardCallback));
+  cardsList.append(getCardHtml(item, removeCard, likeCardCallback, imageClickEvent));
 });
-
-// Закрытие попапа.
-const closeModalCallback = modal => {
-  const form = modal.querySelector('.popup__form');
-  if (form) {
-    form.reset();
-  }
-  document.removeEventListener('keyup', escapeModalEvent);
-}
-
-const openModalCallback = modal => {
-  activeModal = modal;
-  document.addEventListener('keyup', escapeModalEvent)
-}
-
-const escapeModalEvent = event => {
-  if (activeModal && event.key === 'Escape') {
-    closeModal(activeModal, closeModalCallback);
-  }
-}
-
 
 // Глобальные события модального окна.
 modals.forEach(modal => {
@@ -52,36 +46,31 @@ modals.forEach(modal => {
   // Закрытие по кнопки.
   if (closeButton) {
     closeButton.addEventListener('click', event => {
-      closeModal(modal, closeModalCallback);
+      closeModal(modal);
     })
   }
   // Закрытие по клику за пределами попапа.
-  modal.addEventListener('click', event => {
-    if (isModalOpen(modal) && ! isModalAreaClick(modal, event)) {
-      closeModal(modal, closeModalCallback);
-    }
-  })
+  modal.addEventListener('click', overlayClickModalEvent)
 })
 
 // Редактирование профиля
 editProfileButton.addEventListener('click', event => {
-  openModal(editProfileModal, (modal) => {
-    openModalCallback(modal);
-    editProfileForm.name.value = profileName.textContent;
-    editProfileForm.description.value = profileDescription.textContent;
-  });
+  openModal(editProfileModal);
+  editProfileForm.name.value = profileName.textContent;
+  editProfileForm.description.value = profileDescription.textContent;
 })
 
 editProfileForm.addEventListener('submit', event => {
   event.preventDefault();
   profileName.textContent = editProfileForm.name.value;
   profileDescription.textContent = editProfileForm.description.value;
-  closeModal(activeModal, closeModalCallback);
+  closeModal(editProfileModal);
 });
 
 // Добавление карточки.
 addCardButton.addEventListener('click', event => {
-  openModal(addCardModal, openModalCallback);
+  addCardForm.reset();
+  openModal(addCardModal);
 })
 
 addCardForm.addEventListener('submit', event => {
@@ -90,21 +79,7 @@ addCardForm.addEventListener('submit', event => {
     name: addCardForm['place-name'].value,
     link: addCardForm.link.value
   }
-  cardsList.prepend(getCardHtml(data, removeCard, likeCardCallback));
-  closeModal(activeModal, closeModalCallback);
+  cardsList.prepend(getCardHtml(data, removeCard, likeCardCallback, imageClickEvent));
+  closeModal(addCardModal);
 })
 
-// Отображение модульного окна изображения.
-cardsList.addEventListener('click', event => {
-  const image = event.target;
-  if (image.classList.contains('card__image')) {
-    openModal(viewImagePopup, modal => {
-      const popupImage = modal.querySelector('.popup__image');
-      const popupCaption = modal.querySelector('.popup__caption');
-      popupImage.src = image.src;
-      popupImage.alt = image.alt;
-      popupCaption.textContent = image.alt;
-      openModalCallback(modal, openModalCallback);
-    });
-  }
-})

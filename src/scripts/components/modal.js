@@ -1,40 +1,41 @@
 const modalOpenClass = 'popup_is-opened';
-const modalContentSelector = '.popup__content';
+const modalClass = 'popup';
 
-const openModal = (modal, callback) => {
+const openModal = (modal) => {
   modal.classList.add(modalOpenClass);
-
-  if (typeof callback === 'function') {
-    callback(modal);
-  }
+  document.addEventListener('keyup', escapeModalEvent)
 }
 
 const isModalOpen = modal => {
   return modal.classList.contains(modalOpenClass);
 }
 
-const isModalAreaClick = (modal, event) => {
-  if (!modal || !event instanceof PointerEvent) {
-    return false;
-  }
-  const modalRect = modal.querySelector(modalContentSelector).getBoundingClientRect();
-
-  return event.clientX >= modalRect.left &&
-    modalRect.right >= event.clientX &&
-    event.clientY >= modalRect.top &&
-    modalRect.bottom >= event.clientY;
+const isModalOverlayClick = (event) => {
+  return event.target.classList.contains(modalClass);
 }
 
-const closeModal = (modal, callback) => {
+const closeModal = (modal) => {
   modal.classList.remove(modalOpenClass);
-  if (typeof callback === 'function') {
-    callback(modal);
+  document.removeEventListener('keyup', escapeModalEvent);
+}
+
+const escapeModalEvent = event => {
+  const modal = document.querySelector('.' + modalOpenClass);
+  if (modal && event.key === 'Escape') {
+    closeModal(modal);
+  }
+}
+
+const overlayClickModalEvent = event => {
+  const modal = event.target;
+  if  (isModalOverlayClick(event) && isModalOpen(modal)) {
+    closeModal(modal);
   }
 }
 
 export {
   openModal,
   isModalOpen,
-  isModalAreaClick,
+  overlayClickModalEvent,
   closeModal
 }
