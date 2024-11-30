@@ -1,5 +1,3 @@
-import * as api from '../api';
-
 // Темплейт карточки
 const template = {
   source: document.querySelector('#card-template').content,
@@ -19,7 +17,7 @@ const template = {
 }
 
 // Функция создания карточки
-export const getCardHtml = (data, removeCardCallback, likeCardCallback, imageClickEvent) => {
+export const getCardHtml = (data, removeCardCallback, likeCardCallback, imageClickEvent, user_id) => {
   if (!template.source || typeof data !== 'object') {
     return;
   }
@@ -31,9 +29,7 @@ export const getCardHtml = (data, removeCardCallback, likeCardCallback, imageCli
   const title = card.querySelector(template.selectors.title);
   const deleteButton = card.querySelector(template.selectors.deleteButton);
   const likeButton = card.querySelector(template.selectors.likeButton);
-  const likeNumber = card.querySelector(template.selectors.likeNumber);
 
-  likeNumber.textContent = data.likes.length || 0;
   card.querySelector('.' + template.classes.card).dataset.id = data._id;
 
   // Заполнение карточки.
@@ -43,7 +39,6 @@ export const getCardHtml = (data, removeCardCallback, likeCardCallback, imageCli
 
     //Колбэк на картинке
     if (imageClickEvent) {
-      console.log(imageClickEvent);
       image.addEventListener('click', imageClickEvent);
     }
   }
@@ -53,7 +48,7 @@ export const getCardHtml = (data, removeCardCallback, likeCardCallback, imageCli
   }
 
   // Колбэк на удаление по клику.
-  if (data.user_id !== data.owner._id) {
+  if (user_id !== data.owner._id) {
     deleteButton.remove();
   }
   else if (removeCardCallback) {
@@ -65,49 +60,35 @@ export const getCardHtml = (data, removeCardCallback, likeCardCallback, imageCli
   // Колбэк на лайк
   if (likeButton && likeCardCallback) {
     likeButton.addEventListener('click', event => {
-      likeCardCallback(event.target, data._id);
+      likeCardCallback(event.target, data._id, user_id);
     });
   }
 
-  //добавление класса на лайк
-  if (data.likes.length && data.likes.some(item => item._id === data.user_id)) {
-    likeButton.classList.add(template.classes.likeActive);
-  }
+  //обновить лайк
+  updateLike(data, likeButton, user_id);
 
   return card;
 }
 
 // Функция удаления карточки
-export const removeCard = (card, id) => {
-  api.removeCard(id).then(
-    (data) => {
-      if (!card.classList.contains(template.classes.card)) {
-        card = card.closest('.' + template.classes.card);
-      }
-      if (card) {
-        card.remove();
-      }
-    }
-  ).catch(
-    error => {
-      console.log(error);
-    }
-  )
-}
-
-const updateLike = (response, button) => {
-  const card = button.closest('.' + template.classes.card);
-  const number = card.querySelector(template.selectors.likeNumber);
-  button.classList.toggle(template.classes.likeActive);
-  number.textContent = response.likes.length;
+export const removeCard = (card) => {
+  if (!card.classList.contains(template.classes.card)) {
+    card = card.closest('.' + template.classes.card);
+  }
+  if (card) {
+    card.remove();
+  }
 }
 
 // Функция нажатия кнопки лайк.
-export const likeCardCallback = (button, id) => {
-  const functionName = button.classList.contains(template.classes.likeActive) ? 'removeLike' : 'setLike';
-  api[functionName](id).then(response => {
-    updateLike(response, button);
-  }).catch(error => {
-    console.log(error);
-  })
+export const updateLike = (response, button, user_id) => {
+  const card = button.closest('.' + template.classes.card);
+  const number = card.querySelector(template.selectors.likeNumber);
+  if (response.likes.some(item => item._id === user_id)) {
+    button.classList.add(template.classes.likeActive);
+  }
+  else {
+    button.classList.remove(template.classes.likeActive);
+  }
+  number.textContent = response.likes.length;
 }

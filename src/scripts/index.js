@@ -1,18 +1,16 @@
 import '../styles/pages/index.css'
-import { getCardHtml, likeCardCallback, removeCard } from './components/card';
+import {
+  getCardHtml,
+  removeCard,
+  updateLike,
+} from './components/card';
 import {
   openModal,
   closeModal,
   overlayClickModalEvent,
 } from './components/modal';
 import { enableValidation, clearValidation } from './components/validataion';
-import {
-  getInitialCards,
-  getUserInfo,
-  setUserInfo,
-  addCard,
-  setAvatar,
-} from './api';
+import * as api  from './api';
 
 import { strings } from './components/strings';
 
@@ -33,6 +31,13 @@ const profileDescription = document.querySelector('.profile__description');
 const profileImage = document.querySelector('.profile__image');
 const viewImageModal = document.querySelector('.popup_type_image');
 const modals = document.querySelectorAll('.popup');
+const removeCardPopup = document.querySelector('.popup_type_remove-card');
+const removeCardForm = removeCardPopup.querySelector('.popup__form');
+
+const deleteConfirmData = {
+  card: null,
+  id: null
+}
 
 // Отображение модульного окна изображения.
 const imageClickEvent = (event) => {
@@ -47,14 +52,38 @@ const imageClickEvent = (event) => {
   }
 }
 
+const removeConfirmation = (card, id) => {
+  deleteConfirmData.card = card;
+  deleteConfirmData.id = id;
+  openModal(removeCardPopup);
+}
+
+const likeCardCallback = (button, id, user_id) => {
+  const functionName = button.classList.contains('card__like-button_is-active') ? 'removeLike' : 'setLike';
+  api[functionName](id).then(response => {
+    updateLike(response, button, user_id);
+  }).catch(error => {
+    console.log(error);
+  })
+}
+
+removeCardForm.addEventListener('submit', event => {
+  event.preventDefault();
+  api.removeCard(deleteConfirmData.id).then((data) => {
+    removeCard(deleteConfirmData.card);
+    closeModal(removeCardPopup);
+  }).catch(error => {
+    console.log(error);
+  })
+});
+
 // Вывести карточки на страницу
-Promise.all([getUserInfo(), getInitialCards()]).then(([user, cards]) => {
+Promise.all([api.getUserInfo(), api.getInitialCards()]).then(([user, cards]) => {
   profileName.textContent = user.name;
   profileDescription.textContent = user.about;
   profileImage.style.backgroundImage = `url(${user.avatar})`;
   cards.forEach(item => {
-    item.user_id = user._id;
-    cardsList.append(getCardHtml(item, removeCard, likeCardCallback, imageClickEvent));
+    cardsList.append(getCardHtml(item, removeConfirmation, likeCardCallback, imageClickEvent, user._id));
   });
 })
 
@@ -87,10 +116,12 @@ editProfileForm.addEventListener('submit', event => {
   const submitButton = editProfileForm.querySelector('.popup__button');
   event.preventDefault();
   submitButton.textContent = strings.saving;
-  setUserInfo(editProfileForm.name.value, editProfileForm.description.value).then(data => {
+  submitButton.disabled = true;
+  api.setUserInfo(editProfileForm.name.value, editProfileForm.description.value).then(data => {
     profileName.textContent = data.name;
     profileDescription.textContent = data.about;
     submitButton.textContent = strings.save;
+    submitButton.disabled = false;
     closeModal(editProfileModal);
   }).catch(error => {
     console.log(error);
@@ -107,26 +138,17 @@ addCardButton.addEventListener('click', event => {
 addCardForm.addEventListener('submit', event => {
   const submitButton = addCardForm.querySelector('.popup__button');
   submitButton.textContent = strings.saving;
+  submitButton.disabled = true;
   event.preventDefault();
-  addCard(addCardForm['place-name'].value, addCardForm.link.value).then(data => {
-    data.user_id = data.owner._id;
-    cardsList.prepend(getCardHtml(data, removeCard, likeCardCallback, imageClickEvent));
+  api.addCard(addCardForm['place-name'].value, addCardForm.link.value).then(data => {
+    cardsList.prepend(getCardHtml(data, removeConfirmation, likeCardCallback, imageClickEvent, data.owner._id));
     submitButton.textContent = strings.save;
+    submitButton.disabled = false;
     closeModal(addCardModal);
   }).catch(error => {
     console.log(error);
   })
 })
-
-//Включение валидации.
-enableValidation({
-  formSelector: '.popup__form',
-  inputSelector: '.popup__input',
-  submitButtonSelector: '.popup__button',
-  inactiveButtonClass: 'popup__button_disabled',
-  inputErrorClass: 'popup__input_type_error',
-  errorClass: 'popup__error_visible'
-});
 
 editAvatarButton.addEventListener('click', event => {
   editAvatarForm.reset();
@@ -137,13 +159,25 @@ editAvatarButton.addEventListener('click', event => {
 editAvatarForm.addEventListener('submit', event => {
   const submitButton = editAvatarForm.querySelector('.popup__button');
   submitButton.textContent = strings.saving;
+  submitButton.disabled = true;
   event.preventDefault();
-  setAvatar(editAvatarForm.link.value).then(data => {
+  api.setAvatar(editAvatarForm.link.value).then(data => {
     profileImage.style.backgroundImage = `url(${data.avatar})`;
     submitButton.textContent = strings.save;
+    submitButton.disabled = false;
     closeModal(editAvatarModal);
   }).catch(error => {
     console.log(error);
   })
+});
+
+//Включение валидации.
+enableValidation({
+  formSelector: '.popup__form',
+  inputSelector: '.popup__input',
+  submitButtonSelector: '.popup__button',
+  inactiveButtonClass: 'popup__button_disabled',
+  inputErrorClass: 'popup__input_type_error',
+  errorClass: 'popup__error_visible'
 });
 
