@@ -1,4 +1,4 @@
-export const strings = {
+export const textStrings = {
   save: 'Сохранить',
   saving: 'Сохранение...',
 }

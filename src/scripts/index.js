@@ -12,7 +12,7 @@ import {
 import { enableValidation, clearValidation } from './components/validataion';
 import * as api  from './api';
 
-import { strings } from './components/strings';
+import { textStrings } from './components/textStrings';
 
 // DOM узлы
 const cardsholder = document.querySelector('.places');
@@ -20,12 +20,15 @@ const cardsList = cardsholder.querySelector('.places__list');
 const addCardButton = document.querySelector('.profile__add-button');
 const addCardModal  = document.querySelector('.popup_type_new-card');
 const addCardForm = addCardModal.querySelector('.popup__form');
+const submitCardButton = addCardForm.querySelector('.popup__button');
 const editProfileButton = document.querySelector('.profile__edit-button');
 const editProfileModal = document.querySelector('.popup_type_edit');
 const editProfileForm = editProfileModal.querySelector('.popup__form');
+const submitProfileButton = editProfileForm.querySelector('.popup__button');
 const editAvatarModal = document.querySelector('.popup_type_edit-avatar');
 const editAvatarButton = document.querySelector('.profile__edit-avatar');
 const editAvatarForm = editAvatarModal.querySelector('.popup__form');
+const submitAvatarButton = editAvatarForm.querySelector('.popup__button');
 const profileName = document.querySelector('.profile__title');
 const profileDescription = document.querySelector('.profile__description');
 const profileImage = document.querySelector('.profile__image');
@@ -39,6 +42,16 @@ const deleteConfirmData = {
   id: null
 }
 
+const validationConfig = {
+  formSelector: '.popup__form',
+  inputSelector: '.popup__input',
+  submitButtonSelector: '.popup__button',
+  inactiveButtonClass: 'popup__button_disabled',
+  inputErrorClass: 'popup__input_type_error',
+  errorClass: 'popup__error_visible',
+  errorBlockClass: 'popup__error'
+}
+
 // Отображение модульного окна изображения.
 const imageClickEvent = (event) => {
   const image = event.target;
@@ -49,6 +62,16 @@ const imageClickEvent = (event) => {
     popupImage.src = image.src;
     popupImage.alt = image.alt;
     popupCaption.textContent = image.alt;
+  }
+}
+
+const submitButtonStatus = (button, isLoading) => {
+  if (isLoading) {
+    button.textContent = textStrings.saving;
+    button.disabled = true;
+  } else {
+    button.textContent = textStrings.save;
+    button.disabled = false;
   }
 }
 
@@ -84,7 +107,9 @@ Promise.all([api.getUserInfo(), api.getInitialCards()]).then(([user, cards]) => 
   profileImage.style.backgroundImage = `url(${user.avatar})`;
   cards.forEach(item => {
     cardsList.append(getCardHtml(item, removeConfirmation, likeCardCallback, imageClickEvent, user._id));
-  });
+  })
+}).catch(error => {
+  console.log(error);
 })
 
 // Глобальные события модального окна.
@@ -109,75 +134,62 @@ editProfileButton.addEventListener('click', event => {
   editProfileForm.name.dispatchEvent(inputEvent);
   editProfileForm.description.value = profileDescription.textContent;
   editProfileForm.description.dispatchEvent(inputEvent);
-  clearValidation(editProfileForm);
+  clearValidation(editProfileForm, validationConfig);
 })
 
 editProfileForm.addEventListener('submit', event => {
-  const submitButton = editProfileForm.querySelector('.popup__button');
   event.preventDefault();
-  submitButton.textContent = strings.saving;
-  submitButton.disabled = true;
+  submitButtonStatus(submitProfileButton, true);
   api.setUserInfo(editProfileForm.name.value, editProfileForm.description.value).then(data => {
     profileName.textContent = data.name;
     profileDescription.textContent = data.about;
-    submitButton.textContent = strings.save;
-    submitButton.disabled = false;
     closeModal(editProfileModal);
   }).catch(error => {
     console.log(error);
+  }).finally(() => {
+    submitButtonStatus(submitProfileButton, false);
   })
 });
 
 // Добавление карточки.
 addCardButton.addEventListener('click', event => {
   addCardForm.reset();
-  clearValidation(addCardForm);
+  clearValidation(addCardForm, validationConfig);
   openModal(addCardModal);
 })
 
 addCardForm.addEventListener('submit', event => {
-  const submitButton = addCardForm.querySelector('.popup__button');
-  submitButton.textContent = strings.saving;
-  submitButton.disabled = true;
   event.preventDefault();
+  submitButtonStatus(submitCardButton, true);
   api.addCard(addCardForm['place-name'].value, addCardForm.link.value).then(data => {
     cardsList.prepend(getCardHtml(data, removeConfirmation, likeCardCallback, imageClickEvent, data.owner._id));
-    submitButton.textContent = strings.save;
-    submitButton.disabled = false;
     closeModal(addCardModal);
   }).catch(error => {
     console.log(error);
+  }).finally(() => {
+    submitButtonStatus(submitCardButton, false);
   })
 })
 
 editAvatarButton.addEventListener('click', event => {
   editAvatarForm.reset();
-  clearValidation(editAvatarForm);
+  clearValidation(editAvatarForm, validationConfig);
   openModal(editAvatarModal);
 });
 
 editAvatarForm.addEventListener('submit', event => {
-  const submitButton = editAvatarForm.querySelector('.popup__button');
-  submitButton.textContent = strings.saving;
-  submitButton.disabled = true;
   event.preventDefault();
+  submitButtonStatus(submitAvatarButton, true);
   api.setAvatar(editAvatarForm.link.value).then(data => {
     profileImage.style.backgroundImage = `url(${data.avatar})`;
-    submitButton.textContent = strings.save;
-    submitButton.disabled = false;
     closeModal(editAvatarModal);
   }).catch(error => {
     console.log(error);
+  }).finally(() => {
+    submitButtonStatus(submitAvatarButton, false);
   })
 });
 
 //Включение валидации.
-enableValidation({
-  formSelector: '.popup__form',
-  inputSelector: '.popup__input',
-  submitButtonSelector: '.popup__button',
-  inactiveButtonClass: 'popup__button_disabled',
-  inputErrorClass: 'popup__input_type_error',
-  errorClass: 'popup__error_visible'
-});
+enableValidation(validationConfig);
 
