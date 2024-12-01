@@ -12,7 +12,7 @@ import {
 import { enableValidation, clearValidation } from './components/validataion';
 import * as api  from './api';
 
-import { textStrings } from './components/textStrings';
+import { constans } from './components/constans';
 
 // DOM узлы
 const cardsholder = document.querySelector('.places');
@@ -67,10 +67,10 @@ const imageClickEvent = (event) => {
 
 const submitButtonStatus = (button, isLoading) => {
   if (isLoading) {
-    button.textContent = textStrings.saving;
+    button.textContent = constans.savingButtonText;
     button.disabled = true;
   } else {
-    button.textContent = textStrings.save;
+    button.textContent = constans.saveButtonText;
     button.disabled = false;
   }
 }
